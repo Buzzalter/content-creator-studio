@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Wand2, Type, Save, Upload } from "lucide-react";
+import { Wand2, Type, Save, Upload, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PostPreview } from "@/components/PostPreview";
 import { TaskProgress } from "@/components/TaskProgress";
+import { FetchFromGalleryDialog } from "@/components/FetchFromGalleryDialog";
 import { api, fileToBase64, pollTask, type TaskStatus } from "@/lib/api";
 import { usePostStore } from "@/store/postStore";
 import { toast } from "sonner";
