@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Download, ImageOff, Loader2 } from "lucide-react";
+import { Download, ImageOff, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api, base64ToDataUrl, type SavedPost } from "@/lib/api";
+import { usePostStore } from "@/store/postStore";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/gallery")({
@@ -99,6 +100,9 @@ function GalleryPage() {
 
 function PostModal({ post, onClose }: { post: SavedPost | null; onClose: () => void }) {
   const open = !!post;
+  const navigate = useNavigate();
+  const setDraft = usePostStore((s) => s.setDraft);
+
   const handleDownload = () => {
     if (!post) return;
     try {
@@ -107,6 +111,18 @@ function PostModal({ post, onClose }: { post: SavedPost | null; onClose: () => v
       toast.error(e instanceof Error ? e.message : "Download failed");
     }
   };
+
+  const handleEdit = () => {
+    if (!post) return;
+    setDraft({
+      image_base64: post.image_base64,
+      caption: post.caption,
+      prompt: post.prompt,
+    });
+    onClose();
+    navigate({ to: "/edit" });
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl">
@@ -122,7 +138,7 @@ function PostModal({ post, onClose }: { post: SavedPost | null; onClose: () => v
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Caption</div>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{post.caption}</p>
@@ -133,10 +149,16 @@ function PostModal({ post, onClose }: { post: SavedPost | null; onClose: () => v
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{post.prompt}</p>
                 </div>
               )}
-              <Button onClick={handleDownload} className="w-full" size="lg">
-                <Download className="mr-2 h-4 w-4" />
-                Download Assets
-              </Button>
+              <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row">
+                <Button variant="outline" onClick={handleEdit} className="flex-1">
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+                <Button onClick={handleDownload} className="flex-1">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
         )}
