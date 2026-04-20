@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Point this at your FastAPI backend (override per-host as needed)
+      VITE_API_BASE_URL: "http://localhost:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --host

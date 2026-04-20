@@ -1,14 +1,8 @@
-const STORAGE_KEY = "smcg.apiBaseUrl";
 const DEFAULT_BASE = "http://localhost:8000";
 
 export function getApiBaseUrl(): string {
-  if (typeof window === "undefined") return DEFAULT_BASE;
-  return window.localStorage.getItem(STORAGE_KEY) || DEFAULT_BASE;
-}
-
-export function setApiBaseUrl(url: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, url.replace(/\/$/, ""));
+  const fromEnv = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
+  return (fromEnv && fromEnv.replace(/\/$/, "")) || DEFAULT_BASE;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -120,7 +114,6 @@ export async function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // strip data URL prefix
       const idx = result.indexOf(",");
       resolve(idx >= 0 ? result.slice(idx + 1) : result);
     };
