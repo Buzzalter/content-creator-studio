@@ -36,6 +36,7 @@ export interface TaskResponse {
 export interface TaskStatus {
   task_id: string;
   status: "pending" | "processing" | "completed" | "failed" | string;
+  step?: string;
   progress?: number;
   result?: {
     image_base64?: string;
@@ -43,6 +44,7 @@ export interface TaskStatus {
     [k: string]: unknown;
   };
   error?: string;
+  message?: string;
 }
 
 export interface SavedPost {
@@ -98,7 +100,7 @@ export const api = {
 export async function pollTask(
   taskId: string,
   onProgress?: (s: TaskStatus) => void,
-  intervalMs = 1500,
+  intervalMs = 1000,
   timeoutMs = 5 * 60 * 1000,
 ): Promise<TaskStatus> {
   const started = Date.now();
@@ -107,7 +109,7 @@ export async function pollTask(
     const status = await api.task(taskId);
     onProgress?.(status);
     if (status.status === "completed") return status;
-    if (status.status === "failed") throw new Error(status.error || "Task failed");
+    if (status.status === "failed") throw new Error(status.error || status.message || "Task failed");
     if (Date.now() - started > timeoutMs) throw new Error("Task timed out");
     await new Promise((r) => setTimeout(r, intervalMs));
   }
