@@ -95,16 +95,28 @@ export async function pollTask(
   taskId: string,
   onProgress?: (s: TaskStatus) => void,
   intervalMs = 1000,
-  timeoutMs = 5 * 60 * 1000,
+  // 0 or negative disables the timeout entirely
+  timeoutMs = 0,
+  // Optional: bail out if no progress/step change is observed for this long
+  stallTimeoutMs = 0,
 ): Promise<TaskStatus> {
   const started = Date.now();
+  let lastChange = Date.now();
+  let lastSig = "";
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const status = await api.task(taskId);
     onProgress?.(status);
+    const sig = `${status.status}|${status.step ?? ""}|${status.progress ?? ""}`;
+    if (sig !== lastSig) {
+      lastSig = sig;
+      lastChange = Date.now();
+    }
     if (status.status === "completed") return status;
     if (status.status === "failed") throw new Error(status.error || status.message || "Task failed");
-    if (Date.now() - started > timeoutMs) throw new Error("Task timed out");
+    if (timeoutMs > 0 && Date.now() - started > timeoutMs) throw new Error("Task timed out");
+    if (stallTimeoutMs > 0 && Date.now() - lastChange > stallTimeoutMs)
+      throw new Error("Task stalled (no progress updates)");
     await new Promise((r) => setTimeout(r, intervalMs));
   }
 }
