@@ -110,36 +110,18 @@ export async function pollTask(
   taskId: string,
   onProgress?: (s: TaskStatus) => void,
   intervalMs = 1000,
-  // 0 or negative disables the timeout entirely
-  timeoutMs = 0,
-  // Optional: bail out if no progress/step change is observed for this long
-  stallTimeoutMs = 0,
 ): Promise<TaskStatus> {
-  const started = Date.now();
-  let lastChange = Date.now();
-  let lastSig = "";
   let lastStatus: TaskStatus | null = null;
-  let consecutivePollErrors = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
       const status = await api.task(taskId);
-      consecutivePollErrors = 0;
       lastStatus = status;
       onProgress?.(status);
-      const sig = `${status.status}|${status.step ?? ""}|${status.progress ?? ""}`;
-      if (sig !== lastSig) {
-        lastSig = sig;
-        lastChange = Date.now();
-      }
       if (status.status === "completed") return status;
       if (status.status === "failed") throw new Error(status.error || status.message || "Task failed");
     } catch (error) {
-      consecutivePollErrors += 1;
-      if (timeoutMs > 0 && Date.now() - started > timeoutMs) throw new Error("Task timed out");
-      if (stallTimeoutMs > 0 && Date.now() - lastChange > stallTimeoutMs)
-        throw new Error("Task stalled (no progress updates)");
-      if (!isRetryablePollError(error) || consecutivePollErrors >= 30) throw error;
+      if (!isRetryablePollError(error)) throw error;
 
       onProgress?.({
         task_id: taskId,
@@ -150,9 +132,6 @@ export async function pollTask(
         message: error instanceof Error ? error.message : "Polling failed",
       });
     }
-    if (timeoutMs > 0 && Date.now() - started > timeoutMs) throw new Error("Task timed out");
-    if (stallTimeoutMs > 0 && Date.now() - lastChange > stallTimeoutMs)
-      throw new Error("Task stalled (no progress updates)");
     await new Promise((r) => setTimeout(r, intervalMs));
   }
 }
