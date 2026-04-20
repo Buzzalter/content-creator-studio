@@ -1,6 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Moon, Sun, Settings2, Sparkles } from "lucide-react";
+import { Moon, Sun, Settings2, ImageIcon } from "lucide-react";
 import appCss from "../styles.css?url";
 import { applyTheme, getTheme, type Theme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Postly — Social Media Content Generator" },
+      { title: "Post Generator" },
       { name: "description", content: "Generate, edit and curate social posts with AI." },
     ],
     links: [
@@ -92,11 +92,14 @@ function TopNav() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[image:var(--gradient-primary,linear-gradient(135deg,var(--primary),var(--accent)))] shadow-sm">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+        <Link to="/" className="flex items-center gap-3">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border bg-surface text-muted-foreground"
+            aria-label="Logo placeholder"
+          >
+            <ImageIcon className="h-4 w-4" />
           </div>
-          <span className="text-base font-semibold tracking-tight">Postly</span>
+          <span className="text-base font-semibold tracking-tight">Post Generator</span>
         </Link>
 
         <nav className="hidden items-center gap-1 rounded-full border border-border bg-surface p-1 sm:flex">

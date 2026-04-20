@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Sparkles, Send, Save } from "lucide-react";
+import { Sparkles, Pencil, Save } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Generate · Postly" },
+      { title: "Generate · Post Generator" },
       { name: "description", content: "Generate AI-crafted social posts from a prompt and references." },
     ],
   }),
@@ -47,7 +47,7 @@ function GeneratePage() {
         reference_images: refs.map((r) => r.base64),
         custom_caption_prompt: captionPrompt.trim() || undefined,
       });
-      const final = await pollTask(task_id, setStatus);
+      const final = await pollTask(task_id, setStatus, 1000);
       const image = final.result?.image_base64 || "";
       const caption = final.result?.caption || "";
       setResult({ image, caption });
@@ -59,11 +59,13 @@ function GeneratePage() {
     }
   };
 
-  const sendToEdit = () => {
+  const editPost = () => {
     if (!result) return;
     setDraft({ image_base64: result.image, caption: result.caption, prompt });
     navigate({ to: "/edit" });
   };
+
+  const hasOutput = !loading && !!result;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -75,64 +77,64 @@ function GeneratePage() {
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="prompt">Visual prompt</Label>
-          <Textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A golden retriever sitting at a cafe, soft morning light, candid shot…"
-            className="min-h-32 resize-none"
-          />
-        </div>
+        <fieldset disabled={loading} className="space-y-5 disabled:opacity-60">
+          <div className="space-y-2">
+            <Label htmlFor="prompt">Visual prompt</Label>
+            <Textarea
+              id="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="A golden retriever sitting at a cafe, soft morning light, candid shot…"
+              className="min-h-32 resize-none"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="caption">Caption instructions <span className="text-muted-foreground">(optional)</span></Label>
-          <Input
-            id="caption"
-            value={captionPrompt}
-            onChange={(e) => setCaptionPrompt(e.target.value)}
-            placeholder="Make the caption a pun, keep it under 20 words"
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="caption">
+              Caption instructions <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="caption"
+              value={captionPrompt}
+              onChange={(e) => setCaptionPrompt(e.target.value)}
+              placeholder="A short description of post content..."
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label>Reference images</Label>
-          <ReferenceImageUploader images={refs} onChange={setRefs} />
-        </div>
+          <div className="space-y-2">
+            <Label>Reference images</Label>
+            <ReferenceImageUploader images={refs} onChange={setRefs} />
+          </div>
 
-        <Button onClick={onGenerate} disabled={loading} size="lg" className="w-full">
-          <Sparkles className="mr-2 h-4 w-4" />
-          {loading ? "Generating…" : "Generate Post"}
-        </Button>
+          <Button onClick={onGenerate} disabled={loading} size="lg" className="w-full">
+            <Sparkles className="mr-2 h-4 w-4" />
+            {loading ? "Generating…" : "Generate Post"}
+          </Button>
+        </fieldset>
       </section>
 
       <section className="space-y-4">
-        {loading && (
-          <TaskProgress
-            progress={status?.progress}
-            label={status?.status ? `Status: ${status.status}` : "Queued…"}
-          />
-        )}
+        {loading && <TaskProgress progress={status?.progress} step={status?.step || status?.status} />}
 
-        <PostPreview imageBase64={result?.image} caption={result?.caption} />
-
-        {result && (
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={sendToEdit}>
-              <Send className="mr-2 h-4 w-4" />
-              Send to Edit
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() =>
-                openSaveModal({ image_base64: result.image, caption: result.caption, prompt })
-              }
-            >
-              <Save className="mr-2 h-4 w-4" />
-              Save Post
-            </Button>
-          </div>
+        {hasOutput && (
+          <>
+            <PostPreview imageBase64={result!.image} caption={result!.caption} />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={editPost}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Post
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() =>
+                  openSaveModal({ image_base64: result!.image, caption: result!.caption, prompt })
+                }
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Post
+              </Button>
+            </div>
+          </>
         )}
       </section>
     </div>
