@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Wand2, Type, Save, Upload, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,17 +11,7 @@ import { api, fileToBase64, pollTask, type TaskStatus } from "@/lib/api";
 import { usePostStore } from "@/store/postStore";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/edit")({
-  head: () => ({
-    meta: [
-      { title: "Edit · Post Generator" },
-      { name: "description", content: "Refine the image and caption of your generated post." },
-    ],
-  }),
-  component: EditPage,
-});
-
-function EditPage() {
+export default function EditPage() {
   const { draft, setDraft, openSaveModal } = usePostStore();
   const [image, setImage] = useState<string>("");
   const [caption, setCaption] = useState<string>("");

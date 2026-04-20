@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Download, ImageOff, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,17 +7,7 @@ import { api, base64ToDataUrl, type SavedPost } from "@/lib/api";
 import { usePostStore } from "@/store/postStore";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/gallery")({
-  head: () => ({
-    meta: [
-      { title: "Gallery · Postly" },
-      { name: "description", content: "Browse and download saved AI social posts." },
-    ],
-  }),
-  component: GalleryPage,
-});
-
-function GalleryPage() {
+export default function GalleryPage() {
   const [posts, setPosts] = useState<SavedPost[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<SavedPost | null>(null);
@@ -120,7 +110,7 @@ function PostModal({ post, onClose }: { post: SavedPost | null; onClose: () => v
       prompt: post.prompt,
     });
     onClose();
-    navigate({ to: "/edit" });
+    navigate("/edit");
   };
 
   return (

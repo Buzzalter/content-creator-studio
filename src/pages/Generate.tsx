@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Pencil, Save } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,7 @@ import { api, pollTask, type TaskStatus } from "@/lib/api";
 import { usePostStore } from "@/store/postStore";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Generate · Post Generator" },
-      { name: "description", content: "Generate AI-crafted social posts from a prompt and references." },
-    ],
-  }),
-  component: GeneratePage,
-});
-
-function GeneratePage() {
+export default function GeneratePage() {
   const [prompt, setPrompt] = useState("");
   const [captionPrompt, setCaptionPrompt] = useState("");
   const [refs, setRefs] = useState<ReferenceImage[]>([]);
@@ -62,7 +52,7 @@ function GeneratePage() {
   const editPost = () => {
     if (!result) return;
     setDraft({ image_base64: result.image, caption: result.caption, prompt });
-    navigate({ to: "/edit" });
+    navigate("/edit");
   };
 
   const hasOutput = !loading && !!result;
