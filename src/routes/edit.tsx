@@ -201,6 +201,18 @@ function EditPage() {
           </>
         )}
       </section>
+
+      <FetchFromGalleryDialog
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        onSelect={(p) => {
+          setImage(p.image_base64);
+          setCaption(p.caption);
+          setPrompt(p.prompt);
+          setDraft({ image_base64: p.image_base64, caption: p.caption, prompt: p.prompt });
+          toast.success(`Loaded "${p.label}"`);
+        }}
+      />
     </div>
   );
 }
