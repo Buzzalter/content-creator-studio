@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/edit")({
   head: () => ({
     meta: [
-      { title: "Edit · Postly" },
+      { title: "Edit · Post Generator" },
       { name: "description", content: "Refine the image and caption of your generated post." },
     ],
   }),
@@ -34,6 +34,8 @@ function EditPage() {
   const [textLoading, setTextLoading] = useState(false);
   const [status, setStatus] = useState<TaskStatus | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const busy = imgLoading || textLoading;
 
   useEffect(() => {
     if (draft) {
@@ -56,7 +58,7 @@ function EditPage() {
     setStatus(null);
     try {
       const { task_id } = await api.editImage({ image_base64: image, prompt: imagePrompt.trim() });
-      const final = await pollTask(task_id, setStatus);
+      const final = await pollTask(task_id, setStatus, 1000);
       const newImg = final.result?.image_base64 || "";
       if (newImg) {
         setImage(newImg);
@@ -86,6 +88,8 @@ function EditPage() {
     }
   };
 
+  const hasContent = !!image || !!caption;
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
@@ -103,7 +107,7 @@ function EditPage() {
           >
             <Upload className="h-6 w-6 text-muted-foreground" />
             <div className="text-sm font-medium">Upload an image to edit</div>
-            <div className="text-xs text-muted-foreground">Or generate one and click "Send to Edit".</div>
+            <div className="text-xs text-muted-foreground">Or generate one and click "Edit Post".</div>
             <input
               ref={fileRef}
               type="file"
@@ -114,72 +118,77 @@ function EditPage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Wand2 className="h-4 w-4 text-primary" />
-            Image edit
-          </h2>
-          <div className="space-y-2">
-            <Label htmlFor="img-prompt">Instruction</Label>
-            <Input
-              id="img-prompt"
-              value={imagePrompt}
-              onChange={(e) => setImagePrompt(e.target.value)}
-              placeholder="Add a soft sunset glow, remove background clutter…"
-            />
+        <fieldset disabled={busy} className="space-y-6 disabled:opacity-60">
+          <div className="space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Wand2 className="h-4 w-4 text-primary" />
+              Image edit
+            </h2>
+            <div className="space-y-2">
+              <Label htmlFor="img-prompt">Instruction</Label>
+              <Input
+                id="img-prompt"
+                value={imagePrompt}
+                onChange={(e) => setImagePrompt(e.target.value)}
+                placeholder="Add a soft sunset glow, remove background clutter…"
+              />
+            </div>
+            <Button onClick={onRegenImage} disabled={imgLoading} className="w-full">
+              {imgLoading ? "Re-generating…" : "Re-generate Image"}
+            </Button>
           </div>
-          <Button onClick={onRegenImage} disabled={imgLoading} className="w-full">
-            {imgLoading ? "Re-generating…" : "Re-generate Image"}
-          </Button>
-          {imgLoading && (
-            <TaskProgress progress={status?.progress} label={status?.status ? `Status: ${status.status}` : "Queued…"} />
-          )}
-        </div>
 
-        <div className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Type className="h-4 w-4 text-primary" />
-            Caption edit
-          </h2>
-          <div className="space-y-2">
-            <Label htmlFor="caption-current">Current caption</Label>
-            <Textarea
-              id="caption-current"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              className="min-h-24 resize-none"
-              placeholder="Your caption will appear here…"
-            />
+          <div className="space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Type className="h-4 w-4 text-primary" />
+              Caption edit
+            </h2>
+            <div className="space-y-2">
+              <Label htmlFor="caption-current">Current caption</Label>
+              <Textarea
+                id="caption-current"
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                className="min-h-24 resize-none"
+                placeholder="Your caption will appear here…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="text-prompt">Instruction</Label>
+              <Input
+                id="text-prompt"
+                value={textPrompt}
+                onChange={(e) => setTextPrompt(e.target.value)}
+                placeholder="Make it shorter, add a CTA, friendlier tone…"
+              />
+            </div>
+            <Button onClick={onRegenCaption} disabled={textLoading} className="w-full">
+              {textLoading ? "Re-generating…" : "Re-generate Caption"}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="text-prompt">Instruction</Label>
-            <Input
-              id="text-prompt"
-              value={textPrompt}
-              onChange={(e) => setTextPrompt(e.target.value)}
-              placeholder="Make it shorter, add a CTA, friendlier tone…"
-            />
-          </div>
-          <Button onClick={onRegenCaption} disabled={textLoading} className="w-full">
-            {textLoading ? "Re-generating…" : "Re-generate Caption"}
-          </Button>
-        </div>
+        </fieldset>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Social media preview
-        </h2>
-        <PostPreview imageBase64={image} caption={caption} />
-        <Button
-          className="w-full"
-          size="lg"
-          disabled={!image}
-          onClick={() => openSaveModal({ image_base64: image, caption, prompt })}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          Save Post
-        </Button>
+        {imgLoading && <TaskProgress progress={status?.progress} step={status?.step || status?.status} />}
+
+        {!imgLoading && hasContent && (
+          <>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Social media preview
+            </h2>
+            <PostPreview imageBase64={image} caption={caption} />
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={!image}
+              onClick={() => openSaveModal({ image_base64: image, caption, prompt })}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Save Post
+            </Button>
+          </>
+        )}
       </section>
     </div>
   );
