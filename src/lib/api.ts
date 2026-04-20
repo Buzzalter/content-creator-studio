@@ -91,6 +91,21 @@ export const api = {
   downloadUrl: (postId: string) => `${getApiBaseUrl()}/api/posts/${postId}/download`,
 };
 
+function isRetryablePollError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("network error") ||
+    message.includes("502") ||
+    message.includes("503") ||
+    message.includes("504")
+  );
+}
+
 export async function pollTask(
   taskId: string,
   onProgress?: (s: TaskStatus) => void,
@@ -103,17 +118,38 @@ export async function pollTask(
   const started = Date.now();
   let lastChange = Date.now();
   let lastSig = "";
+  let lastStatus: TaskStatus | null = null;
+  let consecutivePollErrors = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const status = await api.task(taskId);
-    onProgress?.(status);
-    const sig = `${status.status}|${status.step ?? ""}|${status.progress ?? ""}`;
-    if (sig !== lastSig) {
-      lastSig = sig;
-      lastChange = Date.now();
+    try {
+      const status = await api.task(taskId);
+      consecutivePollErrors = 0;
+      lastStatus = status;
+      onProgress?.(status);
+      const sig = `${status.status}|${status.step ?? ""}|${status.progress ?? ""}`;
+      if (sig !== lastSig) {
+        lastSig = sig;
+        lastChange = Date.now();
+      }
+      if (status.status === "completed") return status;
+      if (status.status === "failed") throw new Error(status.error || status.message || "Task failed");
+    } catch (error) {
+      consecutivePollErrors += 1;
+      if (timeoutMs > 0 && Date.now() - started > timeoutMs) throw new Error("Task timed out");
+      if (stallTimeoutMs > 0 && Date.now() - lastChange > stallTimeoutMs)
+        throw new Error("Task stalled (no progress updates)");
+      if (!isRetryablePollError(error) || consecutivePollErrors >= 30) throw error;
+
+      onProgress?.({
+        task_id: taskId,
+        status: lastStatus?.status || "processing",
+        step: lastStatus?.step || "Still working… reconnecting to status updates",
+        progress: lastStatus?.progress,
+        result: lastStatus?.result,
+        message: error instanceof Error ? error.message : "Polling failed",
+      });
     }
-    if (status.status === "completed") return status;
-    if (status.status === "failed") throw new Error(status.error || status.message || "Task failed");
     if (timeoutMs > 0 && Date.now() - started > timeoutMs) throw new Error("Task timed out");
     if (stallTimeoutMs > 0 && Date.now() - lastChange > stallTimeoutMs)
       throw new Error("Task stalled (no progress updates)");
