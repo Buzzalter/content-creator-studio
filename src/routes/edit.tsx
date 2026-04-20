@@ -35,6 +35,7 @@ function EditPage() {
   const [textLoading, setTextLoading] = useState(false);
   const [status, setStatus] = useState<TaskStatus | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const busy = imgLoading || textLoading;
 
@@ -94,12 +95,26 @@ function EditPage() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Edit</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Refine the image and caption — or upload your own to start.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Edit</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Refine the image and caption — or load one from the gallery.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} disabled={busy}>
+            <FolderOpen className="mr-2 h-4 w-4" />
+            Fetch from Gallery
+          </Button>
         </div>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => onUpload(e.target.files?.[0] || null)}
+        />
 
         {!image && (
           <div
@@ -108,14 +123,9 @@ function EditPage() {
           >
             <Upload className="h-6 w-6 text-muted-foreground" />
             <div className="text-sm font-medium">Upload an image to edit</div>
-            <div className="text-xs text-muted-foreground">Or generate one and click "Edit Post".</div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => onUpload(e.target.files?.[0] || null)}
-            />
+            <div className="text-xs text-muted-foreground">
+              Or generate one, or pick a saved post from the gallery.
+            </div>
           </div>
         )}
 
