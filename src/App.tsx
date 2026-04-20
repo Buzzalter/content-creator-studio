@@ -11,11 +11,11 @@ import EditPage from "@/pages/Edit";
 import GalleryPage from "@/pages/Gallery";
 import NotFound from "@/pages/NotFound";
 
-const tabs = [
+const tabs: { to: string; label: string; end?: boolean }[] = [
   { to: "/", label: "Generate", end: true },
   { to: "/edit", label: "Edit" },
   { to: "/gallery", label: "Gallery" },
-] as const;
+];
 
 function TopNav() {
   const [theme, setTheme] = useState<Theme>("light");
